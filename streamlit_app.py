@@ -24,7 +24,7 @@ def load_model():
     output = tf.keras.layers.Dense(6, activation='softmax')(x)
     model = tf.keras.models.Model(inputs=base_model.input, outputs=output)
     model.compile(optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"])
-    model.load_weights("model/best_model_weights_trial1.h5")
+    model.load_weights("model/best_model_weights_trial1.keras")
     return model
 
 model = load_model()
