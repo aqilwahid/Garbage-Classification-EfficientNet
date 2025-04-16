@@ -7,9 +7,8 @@ from tensorflow.keras.applications.efficientnet import preprocess_input
 
 # === Konfigurasi halaman ===
 st.set_page_config(page_title="Garbage Classifier", page_icon="♻️", layout="centered")
-
 st.markdown("<h1 style='text-align: center; color: white;'>♻️ Garbage Classifier - EfNetB2</h1>", unsafe_allow_html=True)
-st.write("Real-time detection with webcam or image upload.")
+st.write("Real-time prediction using webcam or image upload.")
 
 # === Load model ===
 @st.cache_resource
@@ -27,25 +26,29 @@ def load_model():
     model.load_weights("model/best_model_weights_trial1.keras")
     return model
 
-model = load_model()
+try:
+    model = load_model()
+except Exception as e:
+    st.error(f"Gagal memuat model: {e}")
+    st.stop()
+
 labels = ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
 
 # === Preprocessing untuk EfficientNet ===
 def preprocess(frame):
     img = cv2.resize(frame, (224, 224))
     img = img.astype('float32')
-    img = preprocess_input(img)  # preprocess resmi EfficientNet
+    img = preprocess_input(img)
     return np.expand_dims(img, axis=0)
 
 # === Fungsi prediksi dan anotasi ===
 def predict_and_draw(frame):
     input_tensor = preprocess(frame)
-    pred = model.predict(input_tensor)[0]
+    pred = model.predict(input_tensor, verbose=0)[0]
     class_idx = np.argmax(pred)
     label = labels[class_idx]
     confidence = pred[class_idx]
 
-    # Gambar bounding box + teks prediksi
     h, w, _ = frame.shape
     cv2.rectangle(frame, (10, 10), (w - 10, h - 10), (0, 255, 0), 3)
 
@@ -56,29 +59,36 @@ def predict_and_draw(frame):
 
     return frame
 
-# === Aktifkan webcam stream ===
-use_webcam = st.checkbox("✅ Aktifkan Webcam Stream")
+# === Webcam Stream (gunakan tombol kontrol) ===
+st.markdown("## 📷 Webcam Stream (Opsional)")
 
-if use_webcam:
+use_webcam = st.checkbox("Aktifkan Webcam Stream")
+start_cam = st.button("Mulai Prediksi") if use_webcam else False
+stop_cam = st.button("Stop")
+
+if use_webcam and start_cam and not stop_cam:
     stframe = st.empty()
     cap = cv2.VideoCapture(0)
 
     while cap.isOpened():
         ret, frame = cap.read()
         if not ret:
-            st.warning("Tidak bisa mengakses kamera.")
+            st.warning("❌ Tidak bisa mengakses kamera.")
             break
 
         frame = cv2.flip(frame, 1)
         result = predict_and_draw(frame)
         stframe.image(result, channels="BGR")
 
+        if stop_cam:
+            break
+
     cap.release()
     cv2.destroyAllWindows()
 
-# === Alternatif: Upload gambar ===
+# === Upload Gambar Alternatif ===
 st.markdown("---")
-st.markdown("### Atau upload gambar:")
+st.markdown("### 🖼️ Atau Upload Gambar:")
 
 uploaded_file = st.file_uploader("Upload file gambar", type=["jpg", "jpeg", "png"])
 if uploaded_file is not None:

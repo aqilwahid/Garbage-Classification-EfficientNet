@@ -1,7 +1,6 @@
-streamlit
-tensorflow==2.9.3
-keras==2.9.0
+streamlit==1.32.2
+tensorflow==2.10.0
 protobuf==3.19.6
-opencv-python
+opencv-python-headless
 numpy
 Pillow
